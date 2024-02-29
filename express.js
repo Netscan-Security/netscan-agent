@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 var os = require("os");
+const { exec } = require('child_process');
 
 const app = express();
 
@@ -23,6 +24,51 @@ app.get('/', (req, res) => {
     .map(details => details.address);
 
   res.render('index-2', { title: pageTitle, message: message, ipv4Addresses: ipv4Addresses });
+});
+
+
+
+app.get('/requestApplicationLogs', (req, res) => {
+  const depth = req.query.depth || 100;
+  const command = `Get-EventLog -LogName Application -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
+
+  exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Error executing PowerShell command: ${error.message}`);
+          res.status(500).send('Internal Server Error');
+          return;
+      }
+      if (stderr) {
+          console.error(`PowerShell command encountered an error: ${stderr}`);
+          res.status(500).send('Internal Server Error');
+          return;
+      }
+
+      const data = JSON.parse(stdout);
+      const indexes = data.map(log => log.Index);
+      res.json(data);
+  });
+});
+app.get('/requestSystemLogs', (req, res) => {
+  const depth = req.query.depth || 100;
+  const command = `Get-EventLog -LogName System -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
+
+  exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Error executing PowerShell command: ${error.message}`);
+          res.status(500).send('Internal Server Error');
+          return;
+      }
+      if (stderr) {
+          console.error(`PowerShell command encountered an error: ${stderr}`);
+          res.status(500).send('Internal Server Error');
+          return;
+      }
+
+      const data = JSON.parse(stdout);
+      const indexes = data.map(log => log.Index);
+      res.json(data);
+  });
 });
 
 // Start the server
