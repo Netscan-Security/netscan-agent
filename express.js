@@ -14,15 +14,15 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Define a route to render an HTML file (for example)
 app.get('/', (req, res) => {
-    const networkInterfaces = os.networkInterfaces();
+  const networkInterfaces = os.networkInterfaces();
 
-    const pageTitle = 'Express with EJS';
-    const message = os.hostname();
-    const ipv4Addresses = Object.values(networkInterfaces)
-  .flatMap(interface => interface.filter(details => details.family === 'IPv4'))
-  .map(details => details.address);
+  const pageTitle = 'Express with EJS';
+  const message = os.hostname();
+  const ipv4Addresses = Object.values(networkInterfaces)
+    .flatMap(interface => interface.filter(details => details.family === 'IPv4'))
+    .map(details => details.address);
 
-    res.render('index', { title: pageTitle, message: message, ipv4Addresses: ipv4Addresses });
+  res.render('index-2', { title: pageTitle, message: message, ipv4Addresses: ipv4Addresses });
 });
 
 // Start the server
