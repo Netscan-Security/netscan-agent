@@ -49,6 +49,7 @@ app.get('/requestApplicationLogs', (req, res) => {
       res.json(data);
   });
 });
+
 app.get('/requestSystemLogs', (req, res) => {
   const depth = req.query.depth || 100;
   const command = `Get-EventLog -LogName System -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
@@ -70,6 +71,55 @@ app.get('/requestSystemLogs', (req, res) => {
       res.json(data);
   });
 });
+
+
+app.get('/getSystemInfo', (req, res) => {
+  const processorCommand = 'Get-WmiObject -Class Win32_Processor | Select-Object Name, Manufacturer, MaxClockSpeed, NumberOfCores | ConvertTo-Json';
+  const videoControllerCommand = 'Get-WmiObject -Class Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json';
+  const ipAddressCommand = 'Get-NetIPAddress | Where-Object { $_.AddressFamily -eq \'IPv4\' } | Select-Object IPAddress, InterfaceAlias | ConvertTo-Json';
+  const physicalMemoryCommand = '(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum / 1gb';
+  const computerInfoCommand = 'Get-ComputerInfo OsName,OsVersion,OsBuildNumber,OsHardwareAbstractionLayer,WindowsVersion | ConvertTo-Json';
+
+  // Execute commands asynchronously
+  Promise.all([
+    executePowerShellCommand(processorCommand),
+    executePowerShellCommand(videoControllerCommand),
+    executePowerShellCommand(ipAddressCommand),
+    executePowerShellCommand(physicalMemoryCommand),
+    executePowerShellCommand(computerInfoCommand)
+  ])
+  .then(results => {
+    const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData] = results;
+    const mergedData = {
+      processorInfo: JSON.parse(processorData),
+      videoControllerInfo: JSON.parse(videoControllerData),
+      ipAddressInfo: JSON.parse(ipAddressData),
+      physicalMemoryGB: parseFloat(physicalMemoryData),
+      computerInfo: JSON.parse(computerInfoData)
+    };
+    res.json(mergedData);
+  })
+  .catch(error => {
+    console.error(`Error executing PowerShell command: ${error}`);
+    res.status(500).send('Internal Server Error');
+  });
+});
+
+function executePowerShellCommand(command) {
+  return new Promise((resolve, reject) => {
+    exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
+      if (error) {
+        reject(`Error executing PowerShell command: ${error.message}`);
+      }
+      if (stderr) {
+        reject(`PowerShell command encountered an error: ${stderr}`);
+      }
+      resolve(stdout);
+    });
+  });
+}
+
+
 
 // Start the server
 const port = 3000;
