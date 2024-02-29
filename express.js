@@ -29,6 +29,7 @@ app.get('/', (req, res) => {
 
 
 app.get('/requestApplicationLogs', (req, res) => {
+  // you can pass query parameters to the URL like this: http://localhost:3000/requestApplicationLogs?depth=10
   const depth = req.query.depth || 100;
   const command = `Get-EventLog -LogName Application -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
 
@@ -51,6 +52,7 @@ app.get('/requestApplicationLogs', (req, res) => {
 });
 
 app.get('/requestSystemLogs', (req, res) => {
+  // you can pass query parameters to the URL like this: http://localhost:3000/requestSystemLogs?depth=10
   const depth = req.query.depth || 100;
   const command = `Get-EventLog -LogName System -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
 
@@ -74,6 +76,7 @@ app.get('/requestSystemLogs', (req, res) => {
 
 
 app.get('/getSystemInfo', (req, res) => {
+  //No need to pass any query parameters to the URL
   const processorCommand = 'Get-WmiObject -Class Win32_Processor | Select-Object Name, Manufacturer, MaxClockSpeed, NumberOfCores | ConvertTo-Json';
   const videoControllerCommand = 'Get-WmiObject -Class Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json';
   const ipAddressCommand = 'Get-NetIPAddress | Where-Object { $_.AddressFamily -eq \'IPv4\' } | Select-Object IPAddress, InterfaceAlias | ConvertTo-Json';
@@ -122,7 +125,12 @@ function executePowerShellCommand(command) {
 
 
 // Start the server
-const port = 3000;
+/*
+let's use port other port than 3000 because netscan need to be running all the time
+and they might be want to use port 3000 for their own purpose
+for this reason we will use port 8443
+*/
+const port = 8443; 
 app.listen(port, () => {
   console.log(`Express server running on http://localhost:${port}`);
 });
