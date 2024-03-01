@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const cors = require("cors")
 var os = require("os");
 const { exec } = require('child_process');
 
@@ -12,6 +13,7 @@ app.set('views', path.join(__dirname, '/'));
 
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use(cors());
 
 // Define a route to render an HTML file (for example)
 app.get('/', (req, res) => {
@@ -34,20 +36,20 @@ app.get('/requestApplicationLogs', (req, res) => {
   const command = `Get-EventLog -LogName Application -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
 
   exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
-      if (error) {
-          console.error(`Error executing PowerShell command: ${error.message}`);
-          res.status(500).send('Internal Server Error');
-          return;
-      }
-      if (stderr) {
-          console.error(`PowerShell command encountered an error: ${stderr}`);
-          res.status(500).send('Internal Server Error');
-          return;
-      }
+    if (error) {
+      console.error(`Error executing PowerShell command: ${error.message}`);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+    if (stderr) {
+      console.error(`PowerShell command encountered an error: ${stderr}`);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
 
-      const data = JSON.parse(stdout);
-      const indexes = data.map(log => log.Index);
-      res.json(data);
+    const data = JSON.parse(stdout);
+    const indexes = data.map(log => log.Index);
+    res.json(data);
   });
 });
 
@@ -57,20 +59,20 @@ app.get('/requestSystemLogs', (req, res) => {
   const command = `Get-EventLog -LogName System -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
 
   exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
-      if (error) {
-          console.error(`Error executing PowerShell command: ${error.message}`);
-          res.status(500).send('Internal Server Error');
-          return;
-      }
-      if (stderr) {
-          console.error(`PowerShell command encountered an error: ${stderr}`);
-          res.status(500).send('Internal Server Error');
-          return;
-      }
+    if (error) {
+      console.error(`Error executing PowerShell command: ${error.message}`);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+    if (stderr) {
+      console.error(`PowerShell command encountered an error: ${stderr}`);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
 
-      const data = JSON.parse(stdout);
-      const indexes = data.map(log => log.Index);
-      res.json(data);
+    const data = JSON.parse(stdout);
+    const indexes = data.map(log => log.Index);
+    res.json(data);
   });
 });
 
@@ -91,21 +93,21 @@ app.get('/getSystemInfo', (req, res) => {
     executePowerShellCommand(physicalMemoryCommand),
     executePowerShellCommand(computerInfoCommand)
   ])
-  .then(results => {
-    const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData] = results;
-    const mergedData = {
-      processorInfo: JSON.parse(processorData),
-      videoControllerInfo: JSON.parse(videoControllerData),
-      ipAddressInfo: JSON.parse(ipAddressData),
-      physicalMemoryGB: parseFloat(physicalMemoryData),
-      computerInfo: JSON.parse(computerInfoData)
-    };
-    res.json(mergedData);
-  })
-  .catch(error => {
-    console.error(`Error executing PowerShell command: ${error}`);
-    res.status(500).send('Internal Server Error');
-  });
+    .then(results => {
+      const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData] = results;
+      const mergedData = {
+        processorInfo: JSON.parse(processorData),
+        videoControllerInfo: JSON.parse(videoControllerData),
+        ipAddressInfo: JSON.parse(ipAddressData),
+        physicalMemoryGB: parseFloat(physicalMemoryData),
+        computerInfo: JSON.parse(computerInfoData)
+      };
+      res.json(mergedData);
+    })
+    .catch(error => {
+      console.error(`Error executing PowerShell command: ${error}`);
+      res.status(500).send('Internal Server Error');
+    });
 });
 
 function executePowerShellCommand(command) {
@@ -130,7 +132,7 @@ let's use port other port than 3000 because netscan need to be running all the t
 and they might be want to use port 3000 for their own purpose
 for this reason we will use port 8443
 */
-const port = 8443; 
+const port = 8443;
 app.listen(port, () => {
   console.log(`Express server running on http://localhost:${port}`);
 });
