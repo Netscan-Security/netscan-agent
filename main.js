@@ -4,8 +4,8 @@ const express = require('./express.js');
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 1250,
-    height: 620,
+    width: 564,
+    height: 696,
     resizable: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
