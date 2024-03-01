@@ -9,12 +9,14 @@ const createWindow = () => {
     resizable: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
-    }
+    },
   })
 
   //win.loadFile('index.html')
   win.loadURL('http://localhost:8443'); // Load your Express server URL
 
+  // Hide the default menu
+  win.setMenu(null);
 
 }
 
