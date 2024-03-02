@@ -7,28 +7,30 @@ contextBridge.exposeInMainWorld('versions', {
   sayHello: () => ipcRenderer.invoke('sayHello')
 });
 
-let isMouseMoving = true;
-let mouseMoveTimer;
+// let isMouseMoving = true;
+// let mouseMoveTimer;
 
 // Function to hide the scrollbar
-const hideScrollbar = () => {
-  document.body.style.overflow = 'hidden';
-};
+// const hideScrollbar = () => {
+//   document.body.style.overflow = 'hidden';
+// };
 
 // Handle mousemove events
+
+// Show the scrollbar
 window.addEventListener('mousemove', () => {
-  if (!isMouseMoving) {
-    isMouseMoving = true;
-    document.body.style.overflow = 'auto'; // Show the scrollbar
-  }
+  // if (!isMouseMoving) {
+  //   isMouseMoving = true;
+  //   document.body.style.overflow = 'auto';
+  // }
 
   // Clear previous timeout (if any) and set a new one
-  clearTimeout(mouseMoveTimer);
-  mouseMoveTimer = setTimeout(() => {
-    isMouseMoving = false;
-    hideScrollbar();
-  }, 1000); // Adjust the time as needed
+  // clearTimeout(mouseMoveTimer);
+  // mouseMoveTimer = setTimeout(() => {
+  //   isMouseMoving = false;
+  //   hideScrollbar();
+  // }, 1000);
 });
 
 // Initial setup to hide the scrollbar
-hideScrollbar();
+// hideScrollbar();
