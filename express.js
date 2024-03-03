@@ -28,6 +28,20 @@ app.get('/', (req, res) => {
   res.render('index-2', { title: pageTitle, message: message, ipv4Addresses: ipv4Addresses });
 });
 
+// route for scans history
+app.get('/scans', (req, res) => {
+  res.render('scan', { title: 'Scans History' });
+});
+
+// route for info
+app.get('/info', (req, res) => {
+  res.render('info', { title: 'System Info' });
+});
+
+// route for settings
+app.get('/settings', (req, res) => {
+  res.render('settings', { title: 'Settings' });
+});
 
 
 app.get('/requestApplicationLogs', (req, res) => {
