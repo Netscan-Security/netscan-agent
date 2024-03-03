@@ -71,7 +71,7 @@
    <div class="flex flex-col flex-1 gap-8 p-6 mx-auto mb-12">
       <div class="container mx-auto ">
          <div class="flex flex-col gap-4">
-            <div class="px-4 py-6 space-y-8 border rounded-lg border-black/20">
+            <div class="pl-4 space-y-8 border rounded-lg border-black/20">
                <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-3">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -85,12 +85,12 @@
                         <p>No action needed</p>
                      </div>
                   </div>
-                  <button class="flex px-3 py-2 text-sm font-medium text-green-600 bg-green-200 rounded-md disabled">
+                  <div
+                     class="flex items-center justify-center w-1/3 h-20 text-sm font-medium text-green-600 bg-green-200 rounded-md">
                      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
                      </svg>
-                     <!-- Check -->
-                  </button>
+                  </div>
                </div>
             </div>
             <div class="px-4 py-6 space-y-8 border rounded-lg border-black/20">
@@ -108,10 +108,10 @@
                         <p>Device info</p>
                      </div>
                   </div>
-                  <button
-                     class="px-3 py-2 text-sm font-medium rounded-md disabled:pointer-events-none disabled:opacity-50 bg-neutral-900 text-neutral-50 hover:bg-neutral-900/90">
+                  <a href="/info"
+                     class="px-3 py-2 text-sm font-medium rounded-md bg-neutral-900 text-neutral-50 hover:bg-neutral-900/90">
                      View
-                  </button>
+                  </a>
                </div>
             </div>
             <div class="px-4 py-6 space-y-8 border rounded-lg border-black/20">
@@ -130,11 +130,10 @@
                         <p>Updates available</p>
                      </div>
                   </div>
-                  <button
-                     class="px-3 py-2 text-sm font-medium bg-green-600 rounded-md disabled:pointer-events-none disabled:opacity-50 text-neutral-50 hover:bg-green-800/80">
+                  <a href="/settings"
+                     class="px-3 py-2 text-sm font-medium bg-green-600 rounded-md text-neutral-50 hover:bg-green-800/80">
                      Download
-                     </svg>
-                  </button>
+                  </a>
                </div>
             </div>
          </div>
