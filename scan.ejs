@@ -187,7 +187,7 @@
                         <p>Device and malware logs</p>
                      </div>
                   </div>
-                  <button
+                  <button id="refresh-logs"
                      class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md disabled:pointer-events-none disabled:opacity-50 bg-neutral-900 text-neutral-50 hover:bg-neutral-900/90">
                      Refresh
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -217,17 +217,11 @@
 
                <div class="p-4 mx-auto text-white bg-gray-900 border border-gray-800 rounded">
 
-                  <div class="overflow-y-auto max-h-96 terminal">
-                     <div class="text-green-500">$ netscan-sec -sP 192.168.1.1/24</div>
-                     <div>Starting NetScan Security 7.80 ( https://netscan.sec ) at 2024-03-03 12:00 UTC</div>
-                     <div>Stats: 0:00:05 elapsed; 0 hosts completed (0 up), 256 scanned</div>
-                     <div>Remaining 255 hosts</div>
-                     <div>...</div>
-                     <div class="text-green-500">$ cat scan_results.txt</div>
-                     <div>Host: 192.168.1.1 Status: Up</div>
-                     <div>Host: 192.168.1.2 Status: Up</div>
-                     <div>Host: 192.168.1.3 Status: Down</div>
-                     <div>...</div>
+                  <div class="overflow-y-auto max-h-96 terminal no-scroll-bar">
+                     <!-- Logs will be fetched and appended here -->
+                     <p id="loading" class="text-center">Loading...</p>
+                     <p id="logsError" class="hidden text-center text-red-500">Error fetching logs</p>
+                     <div class="logs"></div>
                   </div>
                </div>
             </div>
@@ -236,13 +230,57 @@
    </div>
 
    <script>
+      const logs = document.querySelector('.logs');
+      const logsLoading = document.getElementById('loading');
+      const logsError = document.getElementById('logsError');
       // switch change submission
+      function getLogs(depth = 5) {
+         logsLoading.style.display = 'block';
+         logsError.style.display = 'none';
+         fetch(`http://localhost:8443/requestSystemLogs?depth=${depth}`)
+            .then(response => response.json())
+            .then(data => {
+               // data is of type {EventID: string, TimeGenerated: string, Message: string}
+               logsLoading.style.display = 'none';
+
+               data.forEach(log => {
+                  const timeGenerated = document.createElement('span');
+                  timeGenerated.textContent = new Date(Number(log?.TimeGenerated.match(/\d+/)[0])).toLocaleString();
+                  timeGenerated.classList.add('text-green-500');
+                  const logParagraph = document.createElement('p');
+                  logParagraph.textContent = log?.Message;
+                  logs.appendChild(timeGenerated);
+                  logs.appendChild(logParagraph);
+               });
+            })
+            .catch(error => {
+               logsLoading.style.display = 'none';
+               logsError.style.display = 'block';
+               console.error('Error:', error);
+               // handle error state here, e.g., hide loading and show error message
+            });
+
+      }
+
+      // Hanndle switch change
       const switches = document.querySelectorAll('input[type="checkbox"]');
       switches.forEach(s => {
          s.addEventListener('change', function () {
             console.log(`Switch ${this.name} is ${this.checked ? 'on' : 'off'}`);
          });
       });
+
+      // Fetch logs
+      getLogs();
+
+      // Handle refresh logs button
+      const refreshLogs = document.getElementById('refresh-logs');
+      refreshLogs.addEventListener('click', function () {
+         logs.innerHTML = '';
+         getLogs();
+      });
+
+
    </script>
 </body>
 
