@@ -1,6 +1,11 @@
 const express = require('express');
 const path = require('path');
 var os = require("os");
+const fs = require('fs');
+var cron = require('node-cron');
+const axios = require('axios');
+
+
 const { exec } = require('child_process');
 
 const app = express();
@@ -13,6 +18,82 @@ app.set('views', path.join(__dirname, '/'));
 app.use(express.static(path.join(__dirname, "public")));
 
 
+async function sendApplicationLogs(){
+  const depth = 100;
+  console.log('start sending application logs to the server');
+  const command = `Get-EventLog -LogName Application -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
+
+  await exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Error executing PowerShell command: ${error.message}`);
+          //res.status(500).send('Internal Server Error');
+          return;
+      }
+      if (stderr) {
+          console.error(`PowerShell command encountered an error: ${stderr}`);
+          //res.status(500).send('Internal Server Error');
+          return;
+      }
+
+      const data =  JSON.parse(stdout);
+      const indexes = data.map(log => log.Index);
+      //console.log('Data obtained from the client');
+      axios.post('http://127.0.0.1:3000/logs/application/receive', {
+        data
+      })
+      .then(function (response) {
+        //console.log(response);
+      })
+      .catch(function (error) {
+        //console.log(error);
+      });
+      //res.json(data);
+  });
+}
+
+async function sendSecurityLogs(){
+  const depth = 100;
+  console.log('start sending application logs to the server');
+  const command = `Get-EventLog -LogName System -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
+
+  await exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Error executing PowerShell command: ${error.message}`);
+          //res.status(500).send('Internal Server Error');
+          return;
+      }
+      if (stderr) {
+          console.error(`PowerShell command encountered an error: ${stderr}`);
+          //res.status(500).send('Internal Server Error');
+          return;
+      }
+
+      const data =  JSON.parse(stdout);
+      const indexes = data.map(log => log.Index);
+      //console.log('Data obtained from the client');
+      axios.post('http://127.0.0.1:3000/logs/security/receive', {
+        data
+      })
+      .then(function (response) {
+        //console.log(response);
+      })
+      .catch(function (error) {
+        //console.log(error);
+      });
+      //res.json(data);
+  });
+}
+
+
+
+
+
+cron.schedule('* * * * *', () => {
+  
+  console.log('running a task every minute');
+    sendApplicationLogs();
+    sendSecurityLogs();
+});
 // Define a route to render an HTML file (for example)
 app.get('/', (req, res) => {
   const networkInterfaces = os.networkInterfaces();
@@ -24,6 +105,35 @@ app.get('/', (req, res) => {
     .map(details => details.address);
 
   res.render('index-2', { title: pageTitle, message: message, ipv4Addresses: ipv4Addresses });
+});
+
+app.get('/listdir', (req, res) => {
+
+  fs.readdir('.', (err, files) => {
+    if (err) {
+      console.error('Error reading directory:', err);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+
+    // Send the list of files as JSON response
+    res.json({ files });
+  });
+});
+
+app.get('/scanfile', (req, res) => {
+  const file = "Latest Invoice #3232.iso";
+  exec(`"C:\\Users\\Mwanafunzi\\Desktop\\work\\netscan-agent\\clamav-1.3.0.win.x64\\clamdscan.exe" "C:\\Users\\Mwanafunzi\\Documents\\${file}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('Error executing command:', error);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+
+    // If there is any output, send it as the response
+    const response = stdout || stderr;
+    res.send(response);
+  });
 });
 
 
