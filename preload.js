@@ -18,19 +18,19 @@ contextBridge.exposeInMainWorld('versions', {
 // Handle mousemove events
 
 // Show the scrollbar
-window.addEventListener('mousemove', () => {
-  // if (!isMouseMoving) {
-  //   isMouseMoving = true;
-  //   document.body.style.overflow = 'auto';
-  // }
+// window.addEventListener('mousemove', () => {
+//   if (!isMouseMoving) {
+//     isMouseMoving = true;
+//     document.body.style.overflow = 'auto';
+//   }
 
-  // Clear previous timeout (if any) and set a new one
-  // clearTimeout(mouseMoveTimer);
-  // mouseMoveTimer = setTimeout(() => {
-  //   isMouseMoving = false;
-  //   hideScrollbar();
-  // }, 1000);
-});
+//   // Clear previous timeout (if any) and set a new one
+//   clearTimeout(mouseMoveTimer);
+//   mouseMoveTimer = setTimeout(() => {
+//     isMouseMoving = false;
+//     hideScrollbar();
+//   }, 1000);
+// });
 
 // Initial setup to hide the scrollbar
 // hideScrollbar();

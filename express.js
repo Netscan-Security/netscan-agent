@@ -18,7 +18,14 @@ app.set('views', path.join(__dirname, '/'));
 
 app.use(express.static(path.join(__dirname, "public")));
 
+// Middlewares
+///////////////////////////////////
+// middleware to parse the request body
+app.use(express.json());
+
+// Cors middleware
 app.use(cors());
+///////////////////////////////////
 
 async function sendApplicationLogs() {
   const depth = 100;
@@ -98,6 +105,7 @@ cron.schedule('* * * * *', () => {
 });
 // Define a route to render an HTML file (for example)
 app.get('/', (req, res) => {
+  const firstTimeRun = true;
   const networkInterfaces = os.networkInterfaces();
 
   const pageTitle = 'Express with EJS';
@@ -106,7 +114,7 @@ app.get('/', (req, res) => {
     .flatMap(interface => interface.filter(details => details.family === 'IPv4'))
     .map(details => details.address);
 
-  res.render('index-2', { title: pageTitle, message: message, ipv4Addresses: ipv4Addresses });
+  res.render('index-2', { title: pageTitle, message, ipv4Addresses, firstTimeRun });
 });
 
 // route for scans history
@@ -122,6 +130,20 @@ app.get('/info', (req, res) => {
 // route for settings
 app.get('/settings', (req, res) => {
   res.render('settings', { title: 'Settings' });
+});
+
+// First time registration form
+app.post('/first-time', (req, res) => {
+  // console.log('First time registration form submitted');
+  console.log(req.body?.serverIp);
+
+  // Send a response to the client, include success key with value true
+  if (req.body?.serverIp) {
+    res.json({ success: true });
+  }
+  else {
+    res.json({ success: false });
+  }
 });
 
 app.get('/listdir', (req, res) => {
