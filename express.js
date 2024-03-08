@@ -100,8 +100,8 @@ async function sendSecurityLogs() {
 cron.schedule('* * * * *', () => {
 
   console.log('running a task every minute');
-  sendApplicationLogs();
-  sendSecurityLogs();
+  //sendApplicationLogs();
+  //sendSecurityLogs();
 });
 // Define a route to render an HTML file (for example)
 app.get('/', (req, res) => {
@@ -219,12 +219,72 @@ app.get('/requestSystemLogs', (req, res) => {
 
     const data = JSON.parse(stdout);
     const indexes = data.map(log => log.Index);
+    //res.json(data);
     res.json(data);
   });
 });
 
 
+async function sendHostInfo() {
+/*
+    08/03/2024 - Mohamed
+
+    This function need to be called at least once when the agent is installed
+    The userId and RoomId need to be set as well
+    Sounds like we need to fetch these somehow
+    The way I see this after the installation we make api call to the server
+    in order to choose the room and the user
+    The server will return the userId and the roomId
+    We will store these and send them to the server with the host info
+    And of course this will help later for the logs and the scans and whatnot
+    So we need to store these in the local file like a config file(json, yaml, etc) 
+  
+  */
+  const processorCommand = 'Get-WmiObject -Class Win32_Processor | Select-Object Name, Manufacturer, MaxClockSpeed, NumberOfCores | ConvertTo-Json';
+  const videoControllerCommand = 'Get-WmiObject -Class Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json';
+  const ipAddressCommand = 'Get-NetIPAddress | Where-Object { $_.AddressFamily -eq \'IPv4\' } | Select-Object IPAddress, InterfaceAlias | ConvertTo-Json';
+  const physicalMemoryCommand = '(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum / 1gb';
+  const computerInfoCommand = 'Get-ComputerInfo OsName,OsVersion,OsBuildNumber,OsHardwareAbstractionLayer,WindowsVersion | ConvertTo-Json';
+
+  // Execute commands asynchronously
+  await Promise.all([
+    executePowerShellCommand(processorCommand),
+    executePowerShellCommand(videoControllerCommand),
+    executePowerShellCommand(ipAddressCommand),
+    executePowerShellCommand(physicalMemoryCommand),
+    executePowerShellCommand(computerInfoCommand)
+  ])
+    .then(results => {
+      const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData] = results;
+      const mergedData = {
+        processorInfo: JSON.parse(processorData),
+        videoControllerInfo: JSON.parse(videoControllerData),
+        ipAddressInfo: JSON.parse(ipAddressData),
+        physicalMemoryGB: parseFloat(physicalMemoryData),
+        computerInfo: JSON.parse(computerInfoData)
+      };
+      console.log(mergedData);
+      //res.json(mergedData);
+      axios.post('http://127.0.0.1:3000/host/register', {
+        mergedData
+      })
+        .then(function (response) {
+          //console.log(response);
+        })
+        .catch(function (error) {
+          //console.log(error);
+        });
+    })
+    .catch(error => {
+      //console.error(`Error executing PowerShell command: ${error}`);
+      //res.status(500).send('Internal Server Error');
+    });
+
+   
+}
+
 app.get('/getSystemInfo', (req, res) => {
+  sendHostInfo();
   //No need to pass any query parameters to the URL
   const processorCommand = 'Get-WmiObject -Class Win32_Processor | Select-Object Name, Manufacturer, MaxClockSpeed, NumberOfCores | ConvertTo-Json';
   const videoControllerCommand = 'Get-WmiObject -Class Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json';
@@ -250,6 +310,7 @@ app.get('/getSystemInfo', (req, res) => {
         computerInfo: JSON.parse(computerInfoData)
       };
       res.json(mergedData);
+   
     })
     .catch(error => {
       console.error(`Error executing PowerShell command: ${error}`);
