@@ -231,6 +231,7 @@ app.get('/getSystemInfo', (req, res) => {
   const ipAddressCommand = 'Get-NetIPAddress | Where-Object { $_.AddressFamily -eq \'IPv4\' } | Select-Object IPAddress, InterfaceAlias | ConvertTo-Json';
   const physicalMemoryCommand = '(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum / 1gb';
   const computerInfoCommand = 'Get-ComputerInfo OsName,OsVersion,OsBuildNumber,OsHardwareAbstractionLayer,WindowsVersion,CsModel | ConvertTo-Json';
+  const hardDiskCommand = '(Get-Disk 0).size / 1gb';
 
   // Execute commands asynchronously
   Promise.all([
@@ -238,16 +239,18 @@ app.get('/getSystemInfo', (req, res) => {
     executePowerShellCommand(videoControllerCommand),
     executePowerShellCommand(ipAddressCommand),
     executePowerShellCommand(physicalMemoryCommand),
-    executePowerShellCommand(computerInfoCommand)
+    executePowerShellCommand(computerInfoCommand),
+    executePowerShellCommand(hardDiskCommand)
   ])
     .then(results => {
-      const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData] = results;
+      const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData, hardDiskData] = results;
       const mergedData = {
         processorInfo: JSON.parse(processorData),
         videoControllerInfo: JSON.parse(videoControllerData),
         ipAddressInfo: JSON.parse(ipAddressData),
         physicalMemoryGB: parseFloat(physicalMemoryData),
-        computerInfo: JSON.parse(computerInfoData)
+        computerInfo: JSON.parse(computerInfoData),
+        hardDiskGB: parseFloat(hardDiskData)
       };
       res.json(mergedData);
     })
