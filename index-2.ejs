@@ -15,6 +15,9 @@
    <script src="https://cdn.tailwindcss.com"></script>
    <!--Stylesheets-->
    <link rel="stylesheet" href="assets/css/style.css">
+
+   <!-- scripts -->
+   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 
 <body>
@@ -26,15 +29,35 @@
       </div>
    </header>
 
+   <!-- loading state -->
+   <div class="fixed inset-0 z-50 flex items-center justify-center" id="main-loader">
+      <svg class="w-8 h-8 text-gray-200 animate-spin fill-blue-600" viewBox="0 0 100 101" fill="none">
+         <path
+            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+            fill="currentColor" />
+         <path
+            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+            fill="currentFill" />
+      </svg>
+   </div>
+
    <!-- First time running app form -->
    <div class="fixed inset-0 z-50 items-center justify-center hidden" id="firstTimeForm">
       <div class="flex flex-col gap-4 p-8 bg-white rounded-lg w-[90%]">
          <h2 class="text-2xl font-bold">Welcome to NetScan</h2>
-         <p class="text-sm">We are glad to have you here. Please fill in the form below to get started.</p>
+         <p class="text-sm">We are glad to have you here. Please log in to get started.</p>
+         <!-- Error -->
+         <div id="error" class="hidden p-2 text-sm font-medium text-white bg-red-500 rounded-md"></div>
          <form id="first-time-form" class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
-               <label for="serverIp" class="text-sm font-medium">Main Server IP</label>
-               <input type="text" name="serverIp" id="serverIp" class="p-2 border rounded-lg" required>
+               <label for="email" class="text-sm font-medium">Email</label>
+               <input type="email" name="email" id="email" class="p-2 border rounded-lg focus:outline-blue-500"
+                  required />
+            </div>
+            <div class="flex flex-col gap-2">
+               <label for="password" class="text-sm font-medium">Password</label>
+               <input type="password" name="password" id="password" class="p-2 border rounded-lg focus:outline-blue-500"
+                  required />
             </div>
             <button type="submit"
                class="px-4 py-2 mx-auto text-sm font-medium text-white bg-blue-500 rounded-md w-fit">Submit</button>
@@ -42,7 +65,26 @@
       </div>
    </div>
 
-   <main id="mainPage">
+   <!-- Registering host machine, only name field is needed -->
+   <div class="fixed inset-0 z-50 items-center justify-center hidden" id="registerHost">
+      <div class="flex flex-col gap-4 p-8 bg-white rounded-lg w-[90%]">
+         <h2 class="text-2xl font-bold">Register Host</h2>
+         <p class="text-sm">Please provide a name for this machine.</p>
+         <!-- Register Error -->
+         <div id="register-error" class="hidden p-2 text-sm font-medium text-white bg-red-500 rounded-md"></div>
+         <form id="register-host-form" class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+               <label for="host-name" class="text-sm font-medium">Host Name</label>
+               <input type="text" name="host-name" id="host-name" class="p-2 border rounded-lg focus:outline-blue-500"
+                  placeholder="Give the host a name" required />
+            </div>
+            <button type="submit"
+               class="px-4 py-2 mx-auto text-sm font-medium text-white bg-blue-500 rounded-md w-fit">Register</button>
+         </form>
+      </div>
+   </div>
+
+   <main id="mainPage" class="hidden">
       <div class="w-full">
          <section id="bottom-navigation"
             class="container fixed inset-x-0 bottom-0 z-10 block mx-auto bg-white border-t-2 h-fit"">
@@ -160,42 +202,110 @@
       </div>
    </main>
 
-   <script>
+   <script type="module">
+      import { getSystemInfo, storeToLocalStorage, getFromLocalStorage } from "./assets/js/utils.js";
+
       const firstTimeRun = "<%= firstTimeRun %>";
+      const ipAddress = "<%= ipv4Addresses %>";
+      const mainLoader = document.getElementById("main-loader");
       const mainPage = document.getElementById("mainPage");
       const firstTimeForm = document.getElementById("firstTimeForm");
       const firstTimeFormSubmit = document.getElementById("first-time-form");
+      const registerHost = document.getElementById("registerHost");
 
-      if (firstTimeRun === "true") {
-         mainPage.classList.add("hidden");
-         firstTimeForm.classList.remove("hidden");
-         firstTimeForm.classList.add("flex");
+      // if hasHost is true, then show the main page else show the register host form
+      function checkRegisterHost(hasHost) {
+         if (hasHost) {
+            mainLoader.classList.add("hidden");
+            firstTimeForm.classList.replace("invisible", "hidden")
+            registerHost.classList.add("hidden");
+            mainPage.classList.remove("hidden");
+         } else {
+            mainLoader.classList.add("hidden");
+            registerHost.classList.replace("hidden", "flex");
+         }
       }
 
+      if (firstTimeRun === "true") {
+         mainLoader.classList.add("hidden");
+         firstTimeForm.classList.replace("hidden", "flex");
+      }
 
       firstTimeFormSubmit.addEventListener("submit", (e) => {
          e.preventDefault();
-         const serverIp = document.getElementById("serverIp").value;
-         if (serverIp) {
-            fetch("http://localhost:8443/first-time", {
-               method: "POST",
-               headers: {
-                  "Content-Type": "application/json",
-               },
-               body: JSON.stringify({
-                  serverIp,
-               }),
+         const email = document.getElementById("email").value;
+         const password = document.getElementById("password").value;
+
+         firstTimeForm.classList.add("invisible");
+         mainLoader.classList.remove("hidden");
+
+         axios.post("http://localhost:8443/first-time", {
+            email,
+            password,
+         })
+            .then((response) => {
+               const data = response.data;
+               if (data.success) {
+                  storeToLocalStorage("userData", data?.userData);
+                  storeToLocalStorage("userToken", data?.token);
+                  checkRegisterHost(data?.userData?.hasHost)
+               }
             })
-               .then((res) => res.json())
-               .then((data) => {
-                  if (data.success) {
-                     firstTimeForm.classList.add("hidden");
-                     mainPage.classList.remove("hidden");
-                  }
-               });
-         }
+            .catch(() => {
+               mainLoader.classList.add("hidden");
+               firstTimeForm.classList.replace("invisible", "visible");
+               document.getElementById("error").classList.remove("hidden");
+               document.getElementById("error").innerText = "Invalid email or password";
+            });
       });
 
+      // Register host
+      const registerHostForm = document.getElementById("register-host-form");
+      registerHostForm.addEventListener("submit", async (e) => {
+         e.preventDefault();
+         const hostName = document.getElementById("host-name").value;
+
+         registerHost.classList.add("hidden");
+         mainLoader.classList.remove("hidden");
+
+         const userId = getFromLocalStorage("userData")?.userId;
+         const {
+            processorInfo,
+            videoControllerInfo,
+            physicalMemoryGB,
+            computerInfo,
+            hardDiskGB
+         } = await getSystemInfo();
+
+         console.log(processorInfo, videoControllerInfo, computerInfo)
+
+         const hostInfo = {
+            cpu: processorInfo?.Name,
+            memory: `${physicalMemoryGB}GB`,
+            gpu: videoControllerInfo?.Name,
+            hardDisk: `${hardDiskGB}GB`,
+            os: computerInfo?.OsName,
+            model: computerInfo?.CsModel,
+            ipAddress: ipAddress?.split(",")[0] ?? ipAddress
+         }
+
+         axios.post("http://localhost:8443/register-host", {
+            name: hostName,
+            userId,
+            rawInfo: JSON.stringify(hostInfo),
+            ...hostInfo
+         })
+            .then((response) => {
+               const data = response.data;
+               if (data.success) checkRegisterHost(true)
+            })
+            .catch(() => {
+               mainLoader.classList.add("hidden");
+               registerHost.classList.replace("hidden", "flex");
+               document.getElementById("register-error").classList.remove("hidden");
+               document.getElementById("register-error").innerText = "An error occurred, please try again";
+            });
+      });
    </script>
 </body>
 
