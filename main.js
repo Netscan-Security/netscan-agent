@@ -23,6 +23,15 @@ function createWindow() {
   win.loadURL('http://localhost:8443'); // Load your Express server URL
 
   let tray = null;
+
+    /*
+
+    win.on('close', function (event) {
+      event.preventDefault(); // They can not close the app, uncomment this block of code before final build.
+    });
+
+    */
+
     win.on('minimize', function (event) {
         event.preventDefault();
         win.setSkipTaskbar(true);
@@ -48,12 +57,16 @@ function createTray() {
               mainWindow.show();
           }
       },
+      /*
+      
       {
           label: 'Exit', click: function () {
               app.isQuiting = true;
               app.quit();
           }
       }
+
+      */
   ]);
 
   appIcon.on('double-click', function (event) {
