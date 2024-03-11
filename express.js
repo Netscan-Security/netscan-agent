@@ -105,7 +105,11 @@ cron.schedule('* * * * *', () => {
 });
 // Define a route to render an HTML file (for example)
 app.get('/', (req, res) => {
+  ////////////////////////////////////////
+  // We have to figure out a way to know its the first time the app is running
   const firstTimeRun = true;
+  ////////////////////////////////////////
+
   const networkInterfaces = os.networkInterfaces();
 
   const pageTitle = 'Express with EJS';
@@ -135,14 +139,45 @@ app.get('/settings', (req, res) => {
 // First time registration form
 app.post('/first-time', (req, res) => {
   // console.log('First time registration form submitted');
-  console.log(req.body?.serverIp);
+  console.log(req.body?.email);
 
   // Send a response to the client, include success key with value true
-  if (req.body?.serverIp) {
-    res.json({ success: true });
+  if (req.body?.email === "netscan@netscan.com" && req.body?.password === "123456") {
+    // mock user data
+    const userData = {
+      userId: "1",
+      hasHost: false,
+      firstName: "netscan",
+      lastName: "netscan",
+      profilePic: "https://avatars.githubusercontent.com/u/158183621?s=200&v=4",
+      email: "netscan@netscan.com",
+    };
+    const mockToken = "eyJhbGci";
+
+    // return success message, user data and a token
+    res.json({
+      userData,
+      success: true,
+      token: mockToken,
+      message: 'Registration successful'
+    });
+  } else {
+    console.log('Invalid email')
+    // throw an error
+    res.status(400).json({ success: false, message: 'Invalid email' });
   }
-  else {
-    res.json({ success: false });
+});
+
+// Register host
+app.post('/register-host', (req, res) => {
+  console.log("Host Data: ", req.body);
+
+  // Send a response to the client, include success key with value true
+  if (req.body?.name === "Netscan PC") {
+    res.json({ success: true, message: 'Host registration successful' });
+  } else {
+    console.log('Failed to register host')
+    res.status(400).json({ success: false, message: 'Failed to register host' });
   }
 });
 
@@ -290,7 +325,8 @@ app.get('/getSystemInfo', (req, res) => {
   const videoControllerCommand = 'Get-WmiObject -Class Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json';
   const ipAddressCommand = 'Get-NetIPAddress | Where-Object { $_.AddressFamily -eq \'IPv4\' } | Select-Object IPAddress, InterfaceAlias | ConvertTo-Json';
   const physicalMemoryCommand = '(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum / 1gb';
-  const computerInfoCommand = 'Get-ComputerInfo OsName,OsVersion,OsBuildNumber,OsHardwareAbstractionLayer,WindowsVersion | ConvertTo-Json';
+  const computerInfoCommand = 'Get-ComputerInfo OsName,OsVersion,OsBuildNumber,OsHardwareAbstractionLayer,WindowsVersion,CsModel | ConvertTo-Json';
+  const hardDiskCommand = '(Get-Disk 0).size / 1gb';
 
   // Execute commands asynchronously
   Promise.all([
@@ -298,16 +334,18 @@ app.get('/getSystemInfo', (req, res) => {
     executePowerShellCommand(videoControllerCommand),
     executePowerShellCommand(ipAddressCommand),
     executePowerShellCommand(physicalMemoryCommand),
-    executePowerShellCommand(computerInfoCommand)
+    executePowerShellCommand(computerInfoCommand),
+    executePowerShellCommand(hardDiskCommand)
   ])
     .then(results => {
-      const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData] = results;
+      const [processorData, videoControllerData, ipAddressData, physicalMemoryData, computerInfoData, hardDiskData] = results;
       const mergedData = {
         processorInfo: JSON.parse(processorData),
         videoControllerInfo: JSON.parse(videoControllerData),
         ipAddressInfo: JSON.parse(ipAddressData),
         physicalMemoryGB: parseFloat(physicalMemoryData),
-        computerInfo: JSON.parse(computerInfoData)
+        computerInfo: JSON.parse(computerInfoData),
+        hardDiskGB: parseFloat(hardDiskData)
       };
       res.json(mergedData);
    
