@@ -47,6 +47,8 @@
     "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
     "nodemon": "^3.1.0",
-    "serve-favicon": "^2.5.0"
+    "serve-favicon": "^2.5.0",
+    "uuid": "^9.0.1",
+    "xml-js": "^1.6.11"
   }
 }
