@@ -3,15 +3,6 @@
 
 This is basically a client app that will be installed to end user. the application itself is written in Express.js, Electron.js and C++
 
-# Prerequesite
-
-
-```nmap``` should be installed for scan services to work,  
-
-[Nmap Download](https://nmap.org/dist/nmap-7.94-setup.exe)
-
-When we reach the time to build the installer for clients we can embed the nmap executable and will be insalled during agent installation.
-
 
 ## Getting Started
 
@@ -64,12 +55,23 @@ Install set up netscan development and testing environment
 
 
 
-#### Get system logs
+#### Perform network port scanning
 
 ```http
-  GET /networkScan?options=${option}
+  GET /networkScan?options={option}
 ```
 
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
-| `option`      | `string` | **Optional**. Scan type |
+| `depth`      | `string` | **Optional**. Optional |
+
+
+#### Retrieve scan results
+
+```http
+  GET /scanResults?xmlfile=${uuid.xml}
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `xmlfile`      | `string` | **Required**. Required |
