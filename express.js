@@ -5,6 +5,9 @@ var os = require("os");
 const fs = require('fs');
 var cron = require('node-cron');
 const axios = require('axios');
+var convert = require('xml-js');
+const { v4: uuidv4 } = require('uuid');
+
 
 
 const { exec } = require('child_process');
@@ -309,6 +312,81 @@ function executePowerShellCommand(command) {
   });
 }
 
+app.get('/scanResults', (req, res) => {
+  try {
+      const scanFile = req.query.xmlfile || 'nmap_output.xml';
+      const xmlRes = fs.readFileSync(scanFile, 'utf8');
+      const jsonRes = convert.xml2json(xmlRes, { compact: true, spaces: 4 });
+
+      const data3 = JSON.parse(jsonRes);
+
+      const serviceDataArray = [];
+
+      for (let i = 0; i < data3.nmaprun.host.ports.port.length; i++) {
+          const serviceData = {
+              name: data3.nmaprun.host.ports.port[i].service._attributes.name,
+              product: data3.nmaprun.host.ports.port[i].service._attributes.product !== undefined ? data3.nmaprun.host.ports.port[i].service._attributes.product : 'undefined',
+              version: data3.nmaprun.host.ports.port[i].service._attributes.version !== undefined ? data3.nmaprun.host.ports.port[i].service._attributes.version : 'undefined',
+              port: data3.nmaprun.host.ports.port[i]._attributes.portid,
+              protocol: data3.nmaprun.host.ports.port[i]._attributes.protocol,
+              status: data3.nmaprun.host.ports.port[i].state._attributes.state
+          };
+          serviceDataArray.push(serviceData);
+      }
+
+      res.json(serviceDataArray);
+  } catch (error) {
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/networkScan', (req, res) => {
+  // Define target IP
+  const target = '127.0.0.1';
+  const scanUotput = uuidv4();
+  
+  // Run Nmap scan command
+  exec(`nmap -sV -oX ${scanUotput}.xml ${target}`, (error, stdout, stderr) => {
+      if (error) {
+          console.error('Error occurred during Nmap scan:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+          return;
+      }
+      
+      if (stderr) {
+          console.error('Nmap command error:', stderr);
+          res.status(500).json({ error: 'Nmap Command Error' });
+          return;
+      }
+
+      try {
+          // Read the XML output file
+          const xmlRes = fs.readFileSync(`${scanUotput}.xml`, 'utf8');
+          const jsonRes = convert.xml2json(xmlRes, { compact: true, spaces: 4 });
+          const data3 = JSON.parse(jsonRes);
+
+          const serviceDataArray = [];
+
+          for (let i = 0; i < data3.nmaprun.host.ports.port.length; i++) {
+              const serviceData = {
+                  name: data3.nmaprun.host.ports.port[i].service._attributes.name,
+                  product: data3.nmaprun.host.ports.port[i].service._attributes.product !== undefined ? data3.nmaprun.host.ports.port[i].service._attributes.product : 'undefined',
+                  version: data3.nmaprun.host.ports.port[i].service._attributes.version !== undefined ? data3.nmaprun.host.ports.port[i].service._attributes.version : 'undefined',
+                  port: data3.nmaprun.host.ports.port[i]._attributes.portid,
+                  protocol: data3.nmaprun.host.ports.port[i]._attributes.protocol,
+                  status: data3.nmaprun.host.ports.port[i].state._attributes.state
+              };
+              serviceDataArray.push(serviceData);
+          }
+
+          // Send JSON data as response
+          res.json(serviceDataArray);
+      } catch (error) {
+          console.error('Error occurred:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+      }
+  });
+});
 
 
 // Start the server
