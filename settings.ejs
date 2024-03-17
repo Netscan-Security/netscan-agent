@@ -88,8 +88,8 @@
                         <p>You are <span class="font-medium text-green-600">Connected</span></p>
                      </div>
                   </div>
-                  <button
-                     class="px-3 py-2 text-sm font-medium bg-red-600 rounded-md disabled:pointer-events-none disabled:opacity-50 text-red-50 hover:bg-neutral-900/90">
+                  <button id="disconnect-btn"
+                     class="px-3 py-2 text-sm font-medium bg-red-600 rounded-md disabled:pointer-events-none disabled:opacity-50 text-red-50 hover:bg-red-600/80">
                      Disconnect
                   </button>
                </div>
@@ -178,6 +178,18 @@
          </div>
       </div>
    </div>
+
+   <script type="module">
+      import { removeToken } from './assets/js/localStorage/token.js';
+      import { removeUser } from './assets/js/localStorage/user.js';
+
+      const disconnectBtn = document.getElementById('disconnect-btn');
+      disconnectBtn.addEventListener('click', () => {
+         removeToken();
+         removeUser();
+         window.location.href = '/';
+      });
+   </script>
 </body>
 
 </html>
