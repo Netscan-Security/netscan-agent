@@ -449,6 +449,67 @@ app.get('/networkScan', (req, res) => {
   });
 });
 
+app.get('/clamd/version', (req, res) => {
+    const command = 'clamdscan --version';
+
+    exec(command, { maxBuffer: 10000 * 1024 }, (error, stdout, stderr) => {
+        if (error) {
+            res.status(500).json({ error: error.message });
+            return;
+        }
+        if (stderr) {
+            res.status(500).json({ error: stderr });
+            return;
+        }
+        const version = stdout.trim();
+        res.json({ version });
+    });
+});
+
+app.get('/clamd/scan', (req, res) => {
+    const command = 'clamdscan *.js';
+
+    exec(command, { maxBuffer: 10000 * 1024 }, (error, stdout, stderr) => {
+        if (error) {
+            res.status(500).json({ error: error.message });
+            return;
+        }
+        if (stderr) {
+            res.status(500).json({ error: stderr });
+            return;
+        }
+
+        const lines = stdout.split('\n');
+        const fileScanResults = [];
+        let scanSummaryFound = false;
+
+        lines.forEach(line => {
+            // Check if it's the scan summary
+            if (line.includes('----------- SCAN SUMMARY -----------')) {
+                scanSummaryFound = true;
+                return; // Skip this line
+            }
+
+            if (line.trim() !== '' && !scanSummaryFound) {
+                const [filePath, result] = line.split(': ');
+                fileScanResults.push({ filePath: filePath.trim(), result: result.trim() });
+            }
+        });
+
+        res.write('{ "fileScanResults": [\n');
+        fileScanResults.forEach((result, index) => {
+            res.write(JSON.stringify(result));
+            if (index < fileScanResults.length - 1) {
+                res.write(',\n');
+            } else {
+                res.write('\n');
+            }
+        });
+        res.write('] }\n');
+        res.end();
+    });
+});
+
 
 // Start the server
 /*
