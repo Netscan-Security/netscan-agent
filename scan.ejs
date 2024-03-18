@@ -104,7 +104,7 @@
                      <div class="text-sm">
                         <p class="font-semibold">No Threats Found</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                           Your system is secure
+                           Your system is <%= lastscan.status %>
                         </p>
                      </div>
                   </div>
@@ -121,7 +121,7 @@
                      <div class="text-sm">
                         <p class="font-semibold">Last Scanned</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                           Scanned 234 files in 3m 21s
+                           <%= lastscan.lastscan %>
                         </p>
                      </div>
                   </div>
@@ -151,11 +151,11 @@
                      <div class="text-sm">
                         <p class="font-semibold">Realtime Protection</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                           Locate and stop malwares
+                           Locate and stop malware
                         </p>
                      </div>
                      <label class="switch">
-                        <input type="checkbox" name="realtime-protection">
+                        <input type="checkbox" name="realtime-protection" checked>
                         <span class="slider round"></span>
                      </label>
                   </div>
@@ -167,7 +167,7 @@
                         </p>
                      </div>
                      <label class="switch">
-                        <input type="checkbox" name="cloud-protection">
+                        <input type="checkbox" name="cloud-protection" checked>
                         <span class="slider round"></span>
                      </label>
                   </div>
