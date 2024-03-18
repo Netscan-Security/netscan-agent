@@ -165,12 +165,26 @@
                      <div class="text-sm">
                         <p class="font-semibold">Security intelligence is up to date</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                           Last update: 02/03/2024 06:42 PM
+                           Last update: <%= version %>
                         </p>
                      </div>
                   </div>
+
+               </div>
+               <div class="flex justify-between">
+                  <div class="flex items-center gap-2">
+                     <div class="text-sm">
+                        <p class="font-semibold">Ant-Virus Database</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                           Version: <%= version %>
+                        </p>
+                     </div>
+                  </div>
+
+
+
                   <button
-                     class="px-3 py-2 text-sm font-medium rounded-md disabled:pointer-events-none disabled:opacity-50 bg-neutral-900 text-neutral-50 hover:bg-neutral-900/90">
+                          class="px-3 py-2 text-sm font-medium rounded-md disabled:pointer-events-none disabled:opacity-50 bg-neutral-900 text-neutral-50 hover:bg-neutral-900/90">
                      Check for updates
                   </button>
                </div>
