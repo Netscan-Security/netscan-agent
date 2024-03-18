@@ -16,7 +16,7 @@ const { login } = require('./shared/services/authentication');
 
 const app = express();
 
-const API_AWS = 'http://127.0.0.1:3000'
+const API_AWS = 'http://ec2-13-201-168-66.ap-south-1.compute.amazonaws.com:3000'
 
 app.set('view engine', 'ejs');
 
@@ -34,7 +34,7 @@ app.use(cors());
 ///////////////////////////////////
 async function getHostId(userid) {
   try {
-    const response = await axios.get(`http://localhost:3000/host/user/${userid}`); // Replace the URL with your actual API endpoint
+    const response = await axios.get(`${API_AWS}/host/user/${userid}`); // Replace the URL with your actual API endpoint
     const hostId = response.data.hostId; // Assuming the response contains a property named hostId
     console.log('Host ID:', hostId);
 
@@ -82,10 +82,10 @@ async function sendApplicationLogs() {
         // Obtain the userId
         const userId = jsonData.userData.id;
 
-        const HostId = (await axios.get(`http://localhost:3000/host/user/${userId}`)).data.id
+        const HostId = (await axios.get(`${API_AWS}/host/user/${userId}`)).data.id
         console.log('AXIOS', HostId)
         console.log("User ID:", userId);
-        axios.post(`http://127.0.0.1:3000/logs/application/receive`, {
+        axios.post(`${API_AWS}/logs/application/receive`, {
 
           'hostId': HostId,
           'log': data
@@ -162,14 +162,108 @@ app.get('/scans', (req, res) => {
   res.render('scan', { title: 'Scans History' });
 });
 
+
+//route for cheking disks
+
+app.get('/disk-usage', (req, res) => {
+  // you can pass query parameters to the URL like this: http://localhost:3000/requestSystemLogs?depth=10
+  const depth = req.query.depth || 100;
+  const command = `Get-Volume | Select-Object DriveLetter, FileSystemLabel, @{Name='Capacity(GB)'; Expression={[math]::Round($_.Size / 1GB, 2)}}, @{Name='FreeSpace(GB)'; Expression={[math]::Round($_.SizeRemaining / 1GB, 2)}}, @{Name='UsedSpace(GB)'; Expression={[math]::Round(($_.Size - $_.SizeRemaining) / 1GB, 2)}} | ConvertTo-Json`;
+
+  exec(`powershell.exe -Command "${command}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error executing PowerShell command: ${error.message}`);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+    if (stderr) {
+      console.error(`PowerShell command encountered an error: ${stderr}`);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+
+    const data = JSON.parse(stdout);
+    const indexes = data.map(log => log.Index);
+    res.json(data);
+  });
+});
+
 // route for info
-app.get('/info', (req, res) => {
-  res.render('info', { title: 'System Info' });
+app.get('/info', async (req, res) => {
+  const memUsage = ((os.totalmem() - os.freemem()) / os.totalmem()) * 100;
+
+  async function getDiskInfo() {
+
+    return await axios.get('http://127.0.0.1:8443/disk-usage')
+
+  }
+
+
+
+  const diskInfo =  ((await getDiskInfo()).data)
+
+
+
+
+  function cpuAverage() {
+
+    //Initialise sum of idle and time of cores and fetch CPU info
+    var totalIdle = 0, totalTick = 0;
+    var cpus = os.cpus();
+
+    //Loop through CPU cores
+    for (var i = 0, len = cpus.length; i < len; i++) {
+
+      //Select CPU core
+      var cpu = cpus[i];
+
+      //Total up the time in the cores tick
+      for (type in cpu.times) {
+        totalTick += cpu.times[type];
+      }
+
+      //Total up the idle time of the core
+      totalIdle += cpu.times.idle;
+    }
+
+    //Return the average Idle and Tick times
+    return {idle: totalIdle / cpus.length, total: totalTick / cpus.length};
+  }
+
+//Grab first CPU Measure
+  var startMeasure = cpuAverage();
+  var perc;
+//Set delay for second Measure
+  setTimeout(function () {
+
+    //Grab second Measure
+    var endMeasure = cpuAverage();
+
+    //Calculate the difference in idle and total time between the measures
+    var idleDifference = endMeasure.idle - startMeasure.idle;
+    var totalDifference = endMeasure.total - startMeasure.total;
+
+    //Calculate the average percentage CPU usage
+    var percentageCPU = 100 - ~~(100 * idleDifference / totalDifference);
+
+    //Output result to console
+    console.log(percentageCPU + "% CPU Usage.");
+    res.render('info', {title: 'System Info', 'memusage': memUsage.toFixed(2), 'CPUusage': percentageCPU, 'disk': diskInfo });
+
+
+  }, 100);
+
 });
 
 // route for settings
-app.get('/settings', (req, res) => {
-  res.render('settings', { title: 'Settings' });
+app.get('/settings', async (req, res) => {
+  async function getAvVersion() {
+    return (await axios.get('http://127.0.0.1:8443/clamd/version')).data.version
+  }
+
+  const version = await getAvVersion();
+  console.log(version)
+  res.render('settings', {title: 'Settings', version: version});
 });
 
 // First time registration form
@@ -179,21 +273,7 @@ app.post('/first-time', async (req, res) => {
 
 
     const jsonString = JSON.stringify(response, null, 2); // The second argument is for pretty formatting, setting it to null
-    await fs.access(userDataFile, fs.constants.F_OK, async (err) => {
-      if (err) {
-        //console.error('File does not exist or cannot be accessed:', userDataFile);
-        return;
-      }
 
-      // File exists, so delete it
-      await fs.unlink(userDataFile, (unlinkErr) => {
-        if (unlinkErr) {
-          //console.error('Error deleting file:', unlinkErr);
-          return;
-        }
-        //console.log('File deleted successfully:', userDataFile);
-      });
-    });
     await fs.writeFile(userDataFile, jsonString, (err) => {
       if (err) {
         console.error('Error writing to file:', err);

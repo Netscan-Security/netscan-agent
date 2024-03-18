@@ -87,7 +87,7 @@
                         <p>Monitoring system performance</p>
                      </div>
                   </div>
-                  <button
+                  <button id="refreshButton"
                      class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md disabled:pointer-events-none disabled:opacity-50 bg-neutral-900 text-neutral-50 hover:bg-neutral-900/90">
                      Refresh
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -116,7 +116,7 @@
                         <path d="M9 2v2"></path>
                         <path d="M9 20v2"></path>
                      </svg>
-                     <div class="text-sm">CPU Usage: 25%</div>
+                     <div class="text-sm">CPU Usage: <%= CPUusage %>%</div>
                   </div>
                   <div class="flex items-center gap-2">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -134,8 +134,10 @@
                            d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z">
                         </path>
                      </svg>
-                     <div class="text-sm">Memory Usage: 60%</div>
+                     <div class="text-sm">Memory Usage: <%= memusage %>%</div>
                   </div>
+                  <% disk.forEach(volume => { %>
+
                   <div class="flex items-center gap-2">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -147,8 +149,12 @@
                         <line x1="6" x2="6.01" y1="16" y2="16"></line>
                         <line x1="10" x2="10.01" y1="16" y2="16"></line>
                      </svg>
-                     <div class="text-sm">Disk Space: 30% used</div>
+                     <div class="text-sm">Disk <%= volume.DriveLetter %>: <%= volume['UsedSpace(GB)'] %> GB Used Of <%= volume['Capacity(GB)'] %> GB</div>
                   </div>
+
+                  <% }); %>
+
+
                   <div class="flex items-center gap-2">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -190,6 +196,11 @@
    </div>
 
    <script src="assets/js/scripts/info-script.js"></script>
+   <script>
+      document.getElementById("refreshButton").addEventListener("click", function() {
+         location.reload();
+      });
+   </script>
 </body>
 
 </html>
