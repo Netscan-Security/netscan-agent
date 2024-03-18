@@ -113,7 +113,7 @@ function makeBackgroundScan() {
           resolve(serviceDataArray);
           console.log(serviceDataArray);
           try {
-            const response =  axios.post('http://127.0.0.1:3000/scan/receive/results', serviceDataArray);
+            const response =  axios.post(`${API_AWS}/scan/receive/results`, serviceDataArray);
             console.log('Response:', response.data);
             return response.data;
           } catch (error) {
@@ -340,7 +340,7 @@ app.get('/scans', (req, res) => {
       const HostId = (await axios.get(`${API_AWS}/host/user/${userId}`)).data.id
       console.log('SCAN_USER_HOST_ID', HostId)
       console.log("USER_ID_SCAN", userId);
-      const lastScan = ((await axios.get(`http://127.0.0.1:3000/antivirus/lastscan/${userId}`)).data)
+      const lastScan = ((await axios.get(`${API_AWS}/antivirus/lastscan/${userId}`)).data)
 
       console.log('lastscan' ,lastScan)
       res.render('scan', { title: 'Scans History', 'lastscan': lastScan });

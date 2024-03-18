@@ -1,0 +1,29 @@
+C:\Users\kitchen\Desktop\configs\client_00001.conf: OK
+C:\Users\kitchen\Desktop\configs\client_00002.conf: OK
+C:\Users\kitchen\Desktop\configs\client_00003.conf: OK
+C:\Users\kitchen\Desktop\configs\client_00004.conf: OK
+C:\Users\kitchen\Desktop\configs\client_00005.conf: OK
+C:\Users\kitchen\Desktop\configs\server.conf: OK
+C:\Users\kitchen\Desktop\desktop.ini: OK
+C:\Users\kitchen\Desktop\GitHub Desktop.lnk: OK
+C:\Users\kitchen\Desktop\james.conf: OK
+C:\Users\kitchen\Desktop\james2.conf.txt: OK
+C:\Users\kitchen\Desktop\james3.conf: OK
+C:\Users\kitchen\Desktop\james33.conf: OK
+C:\Users\kitchen\Desktop\New folder\fi2l.html: OK
+C:\Users\kitchen\Desktop\New folder\fil.html.txt: OK
+C:\Users\kitchen\Desktop\newclient.conf: OK
+C:\Users\kitchen\Desktop\Nmap - Zenmap GUI.lnk: OK
+C:\Users\kitchen\Desktop\wireguard_configs (1).zip: OK
+
+----------- SCAN SUMMARY -----------
+Known viruses: 8687237
+Engine version: 1.3.0
+Scanned directories: 3
+Scanned files: 17
+Infected files: 0
+Data scanned: 0.00 MB
+Data read: 0.00 MB (ratio 0.00:1)
+Time: 27.329 sec (0 m 27 s)
+Start Date: 2024:03:18 21:25:21
+End Date:   2024:03:18 21:25:48
