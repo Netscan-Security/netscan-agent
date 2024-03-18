@@ -15,6 +15,7 @@ const { login } = require('./shared/services/authentication');
 
 const app = express();
 
+const API_AWS = 'http://ec2-13-201-168-66.ap-south-1.compute.amazonaws.com:3000'
 
 app.set('view engine', 'ejs');
 
@@ -51,7 +52,7 @@ async function sendApplicationLogs() {
     const data = JSON.parse(stdout);
     const indexes = data.map(log => log.Index);
     //console.log('Data obtained from the client');
-    axios.post('http://127.0.0.1:3000/logs/application/receive', {
+    axios.post(`${API_AWS}/logs/application/receive`, {
       data
     })
       .then(function (response) {
@@ -84,7 +85,7 @@ async function sendSecurityLogs() {
     const data = JSON.parse(stdout);
     const indexes = data.map(log => log.Index);
     //console.log('Data obtained from the client');
-    axios.post('http://127.0.0.1:3000/logs/security/receive', {
+    axios.post(`${API_AWS}/logs/security/receive`, {
       data
     })
       .then(function (response) {
