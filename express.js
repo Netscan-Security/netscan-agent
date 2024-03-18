@@ -8,6 +8,7 @@ var cron = require('node-cron');
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { exec } = require('child_process');
+const userDataFile = 'credentials.netscan'
 
 // Local imports
 const { registerHost } = require('./shared/services/host');
@@ -15,7 +16,7 @@ const { login } = require('./shared/services/authentication');
 
 const app = express();
 
-const API_AWS = 'http://ec2-13-201-168-66.ap-south-1.compute.amazonaws.com:3000'
+const API_AWS = 'http://127.0.0.1:3000'
 
 app.set('view engine', 'ejs');
 
@@ -31,8 +32,26 @@ app.use(express.json());
 // Cors middleware
 app.use(cors());
 ///////////////////////////////////
+async function getHostId(userid) {
+  try {
+    const response = await axios.get(`http://localhost:3000/host/user/${userid}`); // Replace the URL with your actual API endpoint
+    const hostId = response.data.hostId; // Assuming the response contains a property named hostId
+    console.log('Host ID:', hostId);
 
+    // You can save the hostId to a file if needed
+    fs.writeFileSync('hostId.txt', hostId); // Write hostId to a file named hostId.txt
+    console.log('Host ID saved to hostId.txt');
+
+    return hostId;
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+}
 async function sendApplicationLogs() {
+
+
+  var userID;
   const depth = 100;
   console.log('start sending application logs to the server');
   const command = `Get-EventLog -LogName Application -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
@@ -48,20 +67,41 @@ async function sendApplicationLogs() {
       //res.status(500).send('Internal Server Error');
       return;
     }
-
     const data = JSON.parse(stdout);
     const indexes = data.map(log => log.Index);
-    //console.log('Data obtained from the client');
-    axios.post(`${API_AWS}/logs/application/receive`, {
-      data
-    })
-      .then(function (response) {
-        //console.log(response);
-      })
-      .catch(function (error) {
-        //console.log(error);
-      });
-    //res.json(data);
+    fs.readFile(userDataFile, 'utf8', async (err, Userdata) => {
+      if (err) {
+        console.error('Error reading file:', err);
+        return;
+      }
+
+      try {
+        // Parse the JSON string into a JavaScript object
+        const jsonData = JSON.parse(Userdata);
+
+        // Obtain the userId
+        const userId = jsonData.userData.id;
+
+        const HostId = (await axios.get(`http://localhost:3000/host/user/${userId}`)).data.id
+        console.log('AXIOS', HostId)
+        console.log("User ID:", userId);
+        axios.post(`http://127.0.0.1:3000/logs/application/receive`, {
+
+          'hostId': HostId,
+          'log': data
+
+        })
+            .then(function (response) {
+              //console.log(response);
+            })
+            .catch(function (error) {
+              //console.log(error);
+            });
+        userID = userId
+      } catch (parseError) {
+        console.error('Error parsing JSON:', parseError);
+      }
+    });
   });
 }
 
@@ -136,6 +176,33 @@ app.get('/settings', (req, res) => {
 app.post('/first-time', async (req, res) => {
   try {
     const response = await login(req.body?.email, req.body?.password, true)
+
+
+    const jsonString = JSON.stringify(response, null, 2); // The second argument is for pretty formatting, setting it to null
+    await fs.access(userDataFile, fs.constants.F_OK, async (err) => {
+      if (err) {
+        //console.error('File does not exist or cannot be accessed:', userDataFile);
+        return;
+      }
+
+      // File exists, so delete it
+      await fs.unlink(userDataFile, (unlinkErr) => {
+        if (unlinkErr) {
+          //console.error('Error deleting file:', unlinkErr);
+          return;
+        }
+        //console.log('File deleted successfully:', userDataFile);
+      });
+    });
+    await fs.writeFile(userDataFile, jsonString, (err) => {
+      if (err) {
+        console.error('Error writing to file:', err);
+        return;
+      }
+      console.log('JSON data has been written to', userDataFile);
+    });
+
+
 
     // return success message, user data and a token
     res.json({
