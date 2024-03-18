@@ -16,7 +16,7 @@ const { login } = require('./shared/services/authentication');
 
 const app = express();
 
-const API_AWS = 'http://127.0.0.1:3000'
+const API_AWS = 'http://ec2-13-201-168-66.ap-south-1.compute.amazonaws.com:3000'
 
 app.set('view engine', 'ejs');
 
@@ -34,7 +34,7 @@ app.use(cors());
 ///////////////////////////////////
 async function getHostId(userid) {
   try {
-    const response = await axios.get(`http://localhost:3000/host/user/${userid}`); // Replace the URL with your actual API endpoint
+    const response = await axios.get(`${API_AWS}/host/user/${userid}`); // Replace the URL with your actual API endpoint
     const hostId = response.data.hostId; // Assuming the response contains a property named hostId
     console.log('Host ID:', hostId);
 
@@ -82,10 +82,10 @@ async function sendApplicationLogs() {
         // Obtain the userId
         const userId = jsonData.userData.id;
 
-        const HostId = (await axios.get(`http://localhost:3000/host/user/${userId}`)).data.id
+        const HostId = (await axios.get(`${API_AWS}/host/user/${userId}`)).data.id
         console.log('AXIOS', HostId)
         console.log("User ID:", userId);
-        axios.post(`http://127.0.0.1:3000/logs/application/receive`, {
+        axios.post(`${API_AWS}/logs/application/receive`, {
 
           'hostId': HostId,
           'log': data
@@ -179,21 +179,7 @@ app.post('/first-time', async (req, res) => {
 
 
     const jsonString = JSON.stringify(response, null, 2); // The second argument is for pretty formatting, setting it to null
-    await fs.access(userDataFile, fs.constants.F_OK, async (err) => {
-      if (err) {
-        //console.error('File does not exist or cannot be accessed:', userDataFile);
-        return;
-      }
 
-      // File exists, so delete it
-      await fs.unlink(userDataFile, (unlinkErr) => {
-        if (unlinkErr) {
-          //console.error('Error deleting file:', unlinkErr);
-          return;
-        }
-        //console.log('File deleted successfully:', userDataFile);
-      });
-    });
     await fs.writeFile(userDataFile, jsonString, (err) => {
       if (err) {
         console.error('Error writing to file:', err);
