@@ -16,7 +16,7 @@ const { login } = require('./shared/services/authentication');
 
 const app = express();
 
-const API_AWS = 'http://ec2-13-201-168-66.ap-south-1.compute.amazonaws.com:3000'
+const API_AWS = 'https://netscanapi.thibitisha.com'
 
 app.set('view engine', 'ejs');
 
