@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///C:/Program Files (x86)/Nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.94 scan initiated Mon Mar 18 19:50:24 2024 as: nmap -sV -oX 2e528449-b651-4794-9ba9-b45106d94637.xml -p3000 127.0.0.1 -->
+<nmaprun scanner="nmap" args="nmap -sV -oX 2e528449-b651-4794-9ba9-b45106d94637.xml -p3000 127.0.0.1" start="1710780624" startstr="Mon Mar 18 19:50:24 2024" version="7.94" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="1" services="3000"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<host starttime="1710780625" endtime="1710780636"><status state="up" reason="localhost-response" reason_ttl="0"/>
+<address addr="127.0.0.1" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<ports><port protocol="tcp" portid="3000"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="http" product="Node.js Express framework" method="probed" conf="10"><cpe>cpe:/a:nodejs:node.js</cpe></service></port>
+</ports>
+<times srtt="0" rttvar="5000" to="100000"/>
+</host>
+<runstats><finished time="1710780636" timestr="Mon Mar 18 19:50:36 2024" summary="Nmap done at Mon Mar 18 19:50:36 2024; 1 IP address (1 host up) scanned in 12.10 seconds" elapsed="12.10" exit="success"/><hosts up="1" down="0" total="1"/>
+</runstats>
+</nmaprun>

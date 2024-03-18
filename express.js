@@ -16,7 +16,7 @@ const { login } = require('./shared/services/authentication');
 
 const app = express();
 
-const API_AWS = 'http://ec2-13-201-168-66.ap-south-1.compute.amazonaws.com:3000'
+const API_AWS = 'https://netscanapi.thibitisha.com'
 
 app.set('view engine', 'ejs');
 
@@ -31,6 +31,107 @@ app.use(express.json());
 
 // Cors middleware
 app.use(cors());
+
+
+function makeBackgroundVirusScan(uuid) {
+  return new Promise((resolve, reject) => {
+    // Simulating a delay of 5 seconds
+    setTimeout(() => {
+
+      const command = `clamscan C:\\Users\\Kitchen\\Desktop\\ --remove=yes -r > ${uuid}.scan`;
+
+      exec(command, { maxBuffer: 10000 * 1024 }, (error, stdout, stderr) => {
+        if (error) {
+          console.log(error.message)
+
+          return;
+        }
+        if (stderr) {
+          console.log(stderr)
+          return;
+        }
+
+
+      });
+
+
+
+
+
+
+    }, 50000); // Adjust delay time as needed
+  });
+}
+
+
+function makeBackgroundScan() {
+  return new Promise((resolve, reject) => {
+    // Simulating a delay of 5 seconds
+    setTimeout(() => {
+      const target = '127.0.0.1';
+      const scanOutput = uuidv4();
+
+      // Run Nmap scan command
+      exec(`nmap -sV -oX ${scanOutput}.xml ${target}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error occurred during Nmap scan:', error);
+          reject(error);
+          return;
+        }
+
+        if (stderr) {
+          console.error('Nmap command error:', stderr);
+          reject(stderr);
+          return;
+        }
+
+        try {
+          // Read the XML output file
+          const xmlRes = fs.readFileSync(`${scanOutput}.xml`, 'utf8');
+          const jsonRes = convert.xml2json(xmlRes, { compact: true, spaces: 4 });
+          const data = JSON.parse(jsonRes);
+
+          const serviceDataArray = [];
+
+          for (let i = 0; i < data.nmaprun.host.ports.port.length; i++) {
+            const serviceData = {
+              name: data.nmaprun.host.ports.port[i].service._attributes.name,
+              product: data.nmaprun.host.ports.port[i].service._attributes.product || 'undefined',
+              version: data.nmaprun.host.ports.port[i].service._attributes.version || 'undefined',
+              port: data.nmaprun.host.ports.port[i]._attributes.portid,
+              protocol: data.nmaprun.host.ports.port[i]._attributes.protocol,
+              status: data.nmaprun.host.ports.port[i].state._attributes.state
+            };
+            serviceDataArray.push(serviceData);
+          }
+
+          // Log serviceDataArray (you can do further processing here)
+
+
+
+          // Resolve the promise
+          resolve(serviceDataArray);
+          console.log(serviceDataArray);
+          try {
+            const response =  axios.post(`${API_AWS}/scan/receive/results`, serviceDataArray);
+            console.log('Response:', response.data);
+            return response.data;
+          } catch (error) {
+            console.error('Error occurred while sending scan results:', error);
+            throw error;
+          }
+        } catch (error) {
+          console.error('Error occurred:', error);
+          reject(error);
+        }
+      });
+
+    }, 5000); // Adjust delay time as needed
+  });
+}
+
+// Call the function
+
 ///////////////////////////////////
 async function getHostId(userid) {
   try {
@@ -105,7 +206,49 @@ async function sendApplicationLogs() {
   });
 }
 
+
+app.get('/trigger-scan', async (req, res) => {
+  try {
+    // Execute the background scan
+    makeBackgroundScan();
+    // Respond with a message
+    res.json({ message: 'Background scan triggered successfully' });
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({ error: 'An error occurred while triggering the background scan' });
+  }
+});
+
+app.get('/trigger-virus-scan', async (req, res) => {
+  try {
+    const scanUotput = uuidv4();
+    // Execute the background scan
+    makeBackgroundVirusScan(scanUotput);
+    // Respond with a message
+    res.json({ message: 'Background virus scan triggered successfully', scanid: `${scanUotput}.scan` });
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({ error: 'An error occurred while triggering the background scan' });
+  }
+});
+
+app.get('/getScanResults', (req, res) => {
+  // Retrieve query parameters from the URL
+  const scanid = req.query.scanid;
+
+  fs.readFile(scanid, (err, data) => {
+    if (err) {
+      // If there's an error reading the file, send an error response
+      return res.status(500).send('Error reading file');
+    }
+
+    // Send the file as a response
+    res.setHeader('Content-Type', 'text/plain'); // Set the appropriate content type
+    res.send(data);
+  });
+});
 async function sendSecurityLogs() {
+  var userID
   const depth = 100;
   console.log('start sending application logs to the server');
   const command = `Get-EventLog -LogName System -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
@@ -124,20 +267,41 @@ async function sendSecurityLogs() {
 
     const data = JSON.parse(stdout);
     const indexes = data.map(log => log.Index);
-    //console.log('Data obtained from the client');
-    axios.post(`${API_AWS}/logs/security/receive`, {
-      data
-    })
-      .then(function (response) {
-        //console.log(response);
-      })
-      .catch(function (error) {
-        //console.log(error);
-      });
-    //res.json(data);
+    fs.readFile(userDataFile, 'utf8', async (err, Userdata) => {
+      if (err) {
+        console.error('Error reading file:', err);
+        return;
+      }
+
+      try {
+        // Parse the JSON string into a JavaScript object
+        const jsonData = JSON.parse(Userdata);
+
+        // Obtain the userId
+        const userId = jsonData.userData.id;
+
+        const HostId = (await axios.get(`${API_AWS}/host/user/${userId}`)).data.id
+        console.log('AXIOS', HostId)
+        console.log("User ID:", userId);
+        axios.post(`${API_AWS}/logs/application/receive`, {
+
+          'hostId': HostId,
+          'log': data
+
+        })
+            .then(function (response) {
+              //console.log(response);
+            })
+            .catch(function (error) {
+              //console.log(error);
+            });
+        userID = userId
+      } catch (parseError) {
+        console.error('Error parsing JSON:', parseError);
+      }
+    });
   });
 }
-
 cron.schedule('* * * * *', () => {
 
   console.log('running a task every minute');
@@ -159,7 +323,35 @@ app.get('/', (req, res) => {
 
 // route for scans history
 app.get('/scans', (req, res) => {
-  res.render('scan', { title: 'Scans History' });
+
+  fs.readFile(userDataFile, 'utf8', async (err, Userdata) => {
+    if (err) {
+      console.error('Error reading file:', err);
+      return;
+    }
+
+    try {
+      // Parse the JSON string into a JavaScript object
+      const jsonData = JSON.parse(Userdata);
+
+      // Obtain the userId
+      const userId = jsonData.userData.id;
+
+      const HostId = (await axios.get(`${API_AWS}/host/user/${userId}`)).data.id
+      console.log('SCAN_USER_HOST_ID', HostId)
+      console.log("USER_ID_SCAN", userId);
+      const lastScan = ((await axios.get(`${API_AWS}/antivirus/lastscan/${userId}`)).data)
+
+      console.log('lastscan' ,lastScan)
+      res.render('scan', { title: 'Scans History', 'lastscan': lastScan });
+
+
+      userID = userId
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+    }
+  });
+
 });
 
 
@@ -533,11 +725,16 @@ app.get('/scanResults', (req, res) => {
 
 app.get('/networkScan', (req, res) => {
   // Define target IP
+  const scanFlags = req.query.options || '';
+  let bufferObj = Buffer.from(scanFlags, "base64");
+  let decodedString = bufferObj.toString("utf8");
+  console.log(decodedString)
   const target = '127.0.0.1';
   const scanUotput = uuidv4();
+  console.log(scanFlags)
 
   // Run Nmap scan command
-  exec(`nmap -sV -oX ${scanUotput}.xml ${target}`, (error, stdout, stderr) => {
+  exec(`nmap -sV ${scanFlags} -oX ${scanUotput}.xml ${target}`, (error, stdout, stderr) => {
     if (error) {
       console.error('Error occurred during Nmap scan:', error);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -579,6 +776,8 @@ app.get('/networkScan', (req, res) => {
   });
 });
 
+
+
 app.get('/clamd/version', (req, res) => {
   const command = 'clamdscan --version';
 
@@ -597,7 +796,7 @@ app.get('/clamd/version', (req, res) => {
 });
 
 app.get('/clamd/scan', (req, res) => {
-  const command = 'clamdscan *.js';
+  const command = 'clamscan C:\\Users\\Kitchen\\Desktop\\ --remove=yes -r > haha2';
 
   exec(command, { maxBuffer: 10000 * 1024 }, (error, stdout, stderr) => {
     if (error) {
