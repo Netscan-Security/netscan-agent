@@ -106,6 +106,7 @@ async function sendApplicationLogs() {
 }
 
 async function sendSecurityLogs() {
+  var userID
   const depth = 100;
   console.log('start sending application logs to the server');
   const command = `Get-EventLog -LogName System -EntryType Error  -Newest ${depth}  | Select EventID, InstanceId, TimeGenerated, Index, Message | ConvertTo-Json`;
@@ -124,20 +125,41 @@ async function sendSecurityLogs() {
 
     const data = JSON.parse(stdout);
     const indexes = data.map(log => log.Index);
-    //console.log('Data obtained from the client');
-    axios.post(`${API_AWS}/logs/security/receive`, {
-      data
-    })
-      .then(function (response) {
-        //console.log(response);
-      })
-      .catch(function (error) {
-        //console.log(error);
-      });
-    //res.json(data);
+    fs.readFile(userDataFile, 'utf8', async (err, Userdata) => {
+      if (err) {
+        console.error('Error reading file:', err);
+        return;
+      }
+
+      try {
+        // Parse the JSON string into a JavaScript object
+        const jsonData = JSON.parse(Userdata);
+
+        // Obtain the userId
+        const userId = jsonData.userData.id;
+
+        const HostId = (await axios.get(`${API_AWS}/host/user/${userId}`)).data.id
+        console.log('AXIOS', HostId)
+        console.log("User ID:", userId);
+        axios.post(`${API_AWS}/logs/application/receive`, {
+
+          'hostId': HostId,
+          'log': data
+
+        })
+            .then(function (response) {
+              //console.log(response);
+            })
+            .catch(function (error) {
+              //console.log(error);
+            });
+        userID = userId
+      } catch (parseError) {
+        console.error('Error parsing JSON:', parseError);
+      }
+    });
   });
 }
-
 cron.schedule('* * * * *', () => {
 
   console.log('running a task every minute');
@@ -472,11 +494,16 @@ app.get('/scanResults', (req, res) => {
 
 app.get('/networkScan', (req, res) => {
   // Define target IP
+  const scanFlags = req.query.options || '';
+  let bufferObj = Buffer.from(scanFlags, "base64");
+  let decodedString = bufferObj.toString("utf8");
+  console.log(decodedString)
   const target = '127.0.0.1';
   const scanUotput = uuidv4();
+  console.log(scanFlags)
 
   // Run Nmap scan command
-  exec(`nmap -sV -oX ${scanUotput}.xml ${target}`, (error, stdout, stderr) => {
+  exec(`nmap -sV ${scanFlags} -oX ${scanUotput}.xml ${target}`, (error, stdout, stderr) => {
     if (error) {
       console.error('Error occurred during Nmap scan:', error);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -536,7 +563,7 @@ app.get('/clamd/version', (req, res) => {
 });
 
 app.get('/clamd/scan', (req, res) => {
-  const command = 'clamdscan *.js';
+  const command = 'clamdscan C:\\Users\\Kitchen\\Desktop\\configs';
 
   exec(command, { maxBuffer: 10000 * 1024 }, (error, stdout, stderr) => {
     if (error) {
