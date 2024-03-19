@@ -1,12 +1,17 @@
+<p align="center">
+  <img width="100" src="https://imgur.com/3cw4DQr.png" alt="NetScan Security Logo" />
+  <h2 align="center">NetScan Client</h2>
+  <p align="center">Precision Scans, Real-time Defense</p>
+</p>
 
-# NetScan Agent
+# Description
 
-This is basically a client app that will be installed to end user. the application itself is written in Express.js, Electron.js and C++
+This is a client app that will be installed on the host computer. the application itself is written in Express.js, Electron.js, and C++
 
 
 ## Getting Started
 
-Install set up netscan development and testing environment
+Install set up NetScan development and testing environment
 
 ```bash
   https://github.com/Netscan-Security/netscan-agent.git
@@ -14,7 +19,7 @@ Install set up netscan development and testing environment
 ```
 
 ```bash
-  cd etscan-agent
+  cd netscan-agent
 ```
 ```bash
   npm install
